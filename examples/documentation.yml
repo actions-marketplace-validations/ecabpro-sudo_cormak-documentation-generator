@@ -1,0 +1,47 @@
+name: Cormak documentation draft
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "One UUID per generation; reuse it for reruns"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: cormak-documentation-${{ inputs.request_id }}
+  cancel-in-progress: false
+jobs:
+  draft:
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    environment: cormak
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+      # Replace owner and commit SHA after Cormak has published the Action.
+      - uses: YOUR_ORG/cormak-documentation-generator@REVIEWED_FULL_COMMIT_SHA
+        id: draft
+        env:
+          CORMAK_API_KEY: ${{ secrets.CORMAK_API_KEY }}
+        with:
+          request_id: ${{ inputs.request_id }}
+          allow_paid: "true"
+          max_credits: "1"
+          kind: release
+          context_file: docs-input/release.md
+          copywriter_id: ${{ vars.CORMAK_COPYWRITER_ID }}
+      - name: Add owner approval link to the run summary
+        if: steps.draft.outputs.status == 'awaiting_confirmation'
+        env:
+          APPROVAL_URL: ${{ steps.draft.outputs.approval_url }}
+        run: printf '[Review and approve in Cormak](%s). Rerun this workflow with the same request ID.\n' "$APPROVAL_URL" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        if: steps.draft.outputs.status == 'complete'
+        with:
+          name: cormak-documentation-draft
+          path: ${{ steps.draft.outputs.output_path }}
+          if-no-files-found: error
+          retention-days: 3

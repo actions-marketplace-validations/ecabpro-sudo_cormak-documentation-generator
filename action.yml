@@ -1,0 +1,49 @@
+name: "Cormak Documentation Generator"
+author: Cormak
+description: "Draft README files, technical guides, release notes and references from reviewed notes."
+branding:
+  icon: book-open
+  color: black
+inputs:
+  request_id:
+    description: "Stable UUID for one operation. Reuse it unchanged on retries."
+    required: true
+  allow_paid:
+    description: "Explicit opt-in to a charge against Cormak credits."
+    required: false
+    default: "false"
+  max_credits:
+    description: "Maximum credits accepted for a new generation."
+    required: true
+  context_file:
+    description: "One reviewed UTF-8 .md or .txt file under docs-input/, up to 5500 characters."
+    required: true
+  copywriter_id:
+    description: "ID of an active Copywriter employee in your Cormak account."
+    required: true
+  kind:
+    description: "readme, technical, release or reference."
+    required: false
+    default: "readme"
+  language:
+    description: "en, ru, de, es, or ko."
+    required: false
+    default: "en"
+  output_path:
+    description: "New path under generated/. Must end in .md."
+    required: false
+    default: "generated/documentation.md"
+outputs:
+  request_id:
+    description: The operation UUID.
+  status:
+    description: complete or awaiting_confirmation.
+  output_path:
+    description: Workspace path of the draft, when complete.
+  credits_charged:
+    description: Credits reported by Cormak, when available.
+  approval_url:
+    description: Open in Cormak for owner approval; reuse the same request and inputs.
+runs:
+  using: node24
+  main: main.mjs
